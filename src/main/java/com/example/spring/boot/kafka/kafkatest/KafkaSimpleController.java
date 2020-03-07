@@ -1,6 +1,7 @@
 package com.example.spring.boot.kafka.kafkatest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,4 +44,12 @@ public class KafkaSimpleController {
     // After you sent a value from Postman, to REST API here, processed and sent to Kafka using KafkaTemplate, in your terminal/console, you may type:
     // kafka-console-consumer --bootstrap-server localhost:9092 --topic myTopic
     // to see the values spit out from that topic in Kafka
+
+    // Create Kafka listener in REST API
+    // When you run POST request with http://localhost:8080/api/kafka/ again, this API endpoint will run by itself, like a listener
+    @KafkaListener(topics = "myTopic")
+    public void getFromKafka(SimpleModel simpleModel) {
+        System.out.println(simpleModel.toString());
+    }
+
 }

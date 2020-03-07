@@ -1,18 +1,24 @@
 package com.example.spring.boot.kafka.kafkatest;
 
+import com.google.gson.Gson;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+// Add @EnableKafka to let this application to listen for Kafka topic
+@EnableKafka
 public class KafkaConfiguration {
 
     // As you know Spring Boot dependency injection, this is the starting part that you configure here.
@@ -44,4 +50,45 @@ public class KafkaConfiguration {
     }
 
     // Remember when you run this application, please run the Zookeeper with Kafka too****
+
+
+    // Kafka Consumer
+    @Bean
+    public ConsumerFactory<String, SimpleModel> consumerFactory() {
+        Map<String, Object> config = new HashMap<>();
+
+        // Basically just copy over the config.put(...) line from producerFactory() method, change from ProducerConfig to ConsumerConfig, change from SERIALIZER to DESERIALIZER
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+
+        // You can put any name for this listener/subscriber, just to differentiate this listener from other listeners in case if you have a lot of Kafka listeners.
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "myGroupId");
+
+        // For the Consumer, not only you have to give the configurations that we have set up, but also give the instance of the object for Deserialization. the JsonDeserializer object you need to give the object explicitly.
+        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new JsonDeserializer<>(SimpleModel.class));
+    }
+
+    // For Consumer, you also need to have a listener by default
+    // You must name this method as kafkaListenerContainerFactory, as this will replace the real kafkaListenerContainerFactory in the Spring Boot context
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, SimpleModel> concurrentKafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        // ConcurrentKafkaListenerContainerFactory doesn't take ConsumerFactory as constructor argument, use setter
+        concurrentKafkaListenerContainerFactory.setConsumerFactory(consumerFactory());
+
+        return concurrentKafkaListenerContainerFactory;
+    }
+
+    // When you run the application, you will see a lot of related consumer client logs appear, indicating successfully registered.
+    // myGroupId: partitions assigned: [myTopic-0]
+
+
+    // Additional knowledge: Use Google GSON 3rd party JSON Serializer and Deserializer library to
+    // This is used to create custom serialization or deserialization
+    @Bean
+    public Gson jsonConverter() {
+        return new Gson();
+    }
 }
