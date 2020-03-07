@@ -59,8 +59,8 @@ public class KafkaConfiguration {
 
         // Basically just copy over the config.put(...) line from producerFactory() method, change from ProducerConfig to ConsumerConfig, change from SERIALIZER to DESERIALIZER
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 
         // You can put any name for this listener/subscriber, just to differentiate this listener from other listeners in case if you have a lot of Kafka listeners.
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "myGroupId");
