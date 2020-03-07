@@ -65,4 +65,23 @@ public class KafkaSimpleController {
         System.out.println("simpleModel.toString(): " + simpleModel.toString());
     }
 
+    // http://localhost:8080/api/kafka/v2
+    // raw JSON body:
+    // {
+    //	"title": "Kafka Consumption",
+    //	"description": "Creating a Kafka Consumer with Spring Boot"
+    //}
+    @PostMapping("/v2")
+    public void post(@RequestBody MoreSimpleModel moreSimpleModel) {
+        kafkaTemplate.send("myTopic2", jsonConverter.toJson(moreSimpleModel));
+    }
+
+    @KafkaListener(topics = "myTopic2")
+    public void getFromKafka2(String moreSimpleModelString) {
+        System.out.println("moreSimpleModelString: " + moreSimpleModelString);
+
+        MoreSimpleModel moreSimpleModel = jsonConverter.fromJson(moreSimpleModelString, MoreSimpleModel.class);
+
+        System.out.println("moreSimpleModel.toString(): " + moreSimpleModel.toString());
+    }
 }
