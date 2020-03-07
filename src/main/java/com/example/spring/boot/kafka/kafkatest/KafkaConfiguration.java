@@ -10,8 +10,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,8 +24,9 @@ public class KafkaConfiguration {
     // and put it into the Spring context.
 
     // ProducerFactory<String, SimpleModel>: String is the id's variable type, SimpleModel
+    // All SimpleModel are replaced by String
     @Bean
-    ProducerFactory<String, SimpleModel> producerFactory() {
+    ProducerFactory<String, String> producerFactory() {
         Map<String, Object> config = new HashMap<>();
 
         // The IP address of the Kafka server that you have set up.
@@ -35,7 +34,7 @@ public class KafkaConfiguration {
 
         // Needed for serializing the key and value of the JSON objects that are passing through Kafka
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
         return new DefaultKafkaProducerFactory<>(config);
     }
@@ -45,7 +44,7 @@ public class KafkaConfiguration {
     // This application becomes the PRODUCER (Observable)
     // The application will become a CONSUMER (Subscriber) when a WebSocket user connected to WebSocket and listens to the topic.
     @Bean
-    public KafkaTemplate<String, SimpleModel> kafkaTemplate() {
+    public KafkaTemplate<String, String> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory()); // The KafkaTemplate object loads with the Producer object in it.
     }
 
@@ -54,26 +53,30 @@ public class KafkaConfiguration {
 
     // Kafka Consumer
     @Bean
-    public ConsumerFactory<String, SimpleModel> consumerFactory() {
+    public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
 
         // Basically just copy over the config.put(...) line from producerFactory() method, change from ProducerConfig to ConsumerConfig, change from SERIALIZER to DESERIALIZER
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        // config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        // Replace to use StringDeserializer.class
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
         // You can put any name for this listener/subscriber, just to differentiate this listener from other listeners in case if you have a lot of Kafka listeners.
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "myGroupId");
 
         // For the Consumer, not only you have to give the configurations that we have set up, but also give the instance of the object for Deserialization. the JsonDeserializer object you need to give the object explicitly.
-        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new JsonDeserializer<>(SimpleModel.class));
+        // return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new JsonDeserializer<>(SimpleModel.class));
+        // Replace to use StringDeserializer.class
+        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new StringDeserializer());
     }
 
     // For Consumer, you also need to have a listener by default
     // You must name this method as kafkaListenerContainerFactory, as this will replace the real kafkaListenerContainerFactory in the Spring Boot context
     @Bean
     public ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, SimpleModel> concurrentKafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, String> concurrentKafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
 
         // ConcurrentKafkaListenerContainerFactory doesn't take ConsumerFactory as constructor argument, use setter
         concurrentKafkaListenerContainerFactory.setConsumerFactory(consumerFactory());
@@ -91,4 +94,6 @@ public class KafkaConfiguration {
     public Gson jsonConverter() {
         return new Gson();
     }
+
+    // The instructor intents to converts whatever String comes from the HTML request into Gson object and convert it to any POJO object.
 }

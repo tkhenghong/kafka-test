@@ -1,5 +1,6 @@
 package com.example.spring.boot.kafka.kafkatest;
 
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -21,11 +22,15 @@ public class KafkaSimpleController {
     // kafka-server-start /usr/local/etc/kafka/server.properties
 
     // Constructor injection
-    private KafkaTemplate<String, SimpleModel> kafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    // Bring in the Bean created in KafkaConfiguration.java file
+    private Gson jsonConverter;
 
     @Autowired
-    public KafkaSimpleController(KafkaTemplate<String, SimpleModel> kafkaTemplate) {
+    public KafkaSimpleController(KafkaTemplate<String, String> kafkaTemplate, Gson jsonConverter) {
         this.kafkaTemplate = kafkaTemplate;
+        this.jsonConverter = jsonConverter;
     }
 
     // Create a simple API to get message from outside to store into a topic of Kafka
@@ -38,7 +43,9 @@ public class KafkaSimpleController {
     // Producer
     @PostMapping("/")
     public void post(@RequestBody SimpleModel simpleModel) {
-        this.kafkaTemplate.send("myTopic", simpleModel);
+        // Convert SimpleModel object to Gson string
+        String simpleModelString = jsonConverter.toJson(simpleModel);
+        this.kafkaTemplate.send("myTopic", simpleModelString);
     }
 
     // After you sent a value from Postman, to REST API here, processed and sent to Kafka using KafkaTemplate, in your terminal/console, you may type:
@@ -48,8 +55,14 @@ public class KafkaSimpleController {
     // Create Kafka listener in REST API
     // When you run POST request with http://localhost:8080/api/kafka/ again, this API endpoint will run by itself, like a listener
     @KafkaListener(topics = "myTopic")
-    public void getFromKafka(SimpleModel simpleModel) {
-        System.out.println(simpleModel.toString());
+    public void getFromKafka(String simpleModelString) {
+
+        System.out.println("simpleModelString: " + simpleModelString);
+
+        // Convert Gson String back to Model
+        SimpleModel simpleModel = jsonConverter.fromJson(simpleModelString, SimpleModel.class);
+
+        System.out.println("simpleModel.toString(): " + simpleModel.toString());
     }
 
 }
