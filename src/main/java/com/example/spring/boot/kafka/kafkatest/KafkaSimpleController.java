@@ -23,6 +23,7 @@ public class KafkaSimpleController {
 
 
     // Start up (better with sudo to prevent file access denied errors):
+    // Command for MacOS install Kafka with Zookeeper with brew:
     // sudo zookeeper-server-start /usr/local/etc/kafka/zookeeper.properties
     // sudo kafka-server-start /usr/local/etc/kafka/server.properties
 
