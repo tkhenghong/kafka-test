@@ -1,5 +1,7 @@
-package com.example.spring.boot.kafka.kafkatest;
+package com.example.spring.boot.kafka.kafkatest.controllers;
 
+import com.example.spring.boot.kafka.kafkatest.models.MoreSimpleModel;
+import com.example.spring.boot.kafka.kafkatest.models.SimpleModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -121,7 +123,7 @@ public class KafkaSimpleController {
      *
      * @param simpleModelString: A String got from Kafka, ready to be converted into SimpleModel object.
      */
-//    @KafkaListener(topics = "myTopic3")
+    @KafkaListener(topics = "myTopic3")
     public void getSimpleModelFromKafkaWithObjectMapper(String simpleModelString) {
         logger.info("getSimpleModelFromKafkaWithObjectMapper()");
         SimpleModel simpleModel = null;

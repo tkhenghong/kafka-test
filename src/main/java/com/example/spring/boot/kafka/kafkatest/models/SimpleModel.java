@@ -1,4 +1,4 @@
-package com.example.spring.boot.kafka.kafkatest;
+package com.example.spring.boot.kafka.kafkatest.models;
 
 // Generate simple model for Kafka
 public class SimpleModel {

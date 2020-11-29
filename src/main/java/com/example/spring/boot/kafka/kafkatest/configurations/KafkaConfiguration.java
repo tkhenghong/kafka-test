@@ -1,4 +1,4 @@
-package com.example.spring.boot.kafka.kafkatest;
+package com.example.spring.boot.kafka.kafkatest.configurations;
 
 import com.google.gson.Gson;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

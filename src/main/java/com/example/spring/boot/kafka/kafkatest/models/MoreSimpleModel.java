@@ -1,4 +1,4 @@
-package com.example.spring.boot.kafka.kafkatest;
+package com.example.spring.boot.kafka.kafkatest.models;
 
 public class MoreSimpleModel {
     private String title;
