@@ -16,10 +16,15 @@ public class KafkaSimpleController {
     // brew cask install java
     // brew install kafka
 
+    // Encountered and solved Problem:
+    // Unable to start kafka with error: Broker may not be configured.
+    // Reason: Due to file access denied as stated in Kafka logs
+    // Solution: start Kafka server with su level
 
-    // Start up:
-    // zookeeper-server-start /usr/local/etc/kafka/zookeeper.properties
-    // kafka-server-start /usr/local/etc/kafka/server.properties
+
+    // Start up (better with sudo to prevent file access denied errors):
+    // sudo zookeeper-server-start /usr/local/etc/kafka/zookeeper.properties
+    // sudo kafka-server-start /usr/local/etc/kafka/server.properties
 
     // Constructor injection
     private KafkaTemplate<String, String> kafkaTemplate;
