@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.kafka:spring-kafka' // The main thing
+    implementation 'org.springframework.kafka:spring-kafka'
     implementation 'com.google.code.gson:gson' // Used 3rd party JSON serializer and deserializer
 
     compileOnly 'org.projectlombok:lombok'

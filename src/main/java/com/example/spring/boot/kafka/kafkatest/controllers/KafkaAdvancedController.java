@@ -27,12 +27,20 @@ import java.util.Map;
 @RequestMapping("/api/kafka/advanced")
 public class KafkaAdvancedController {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    /**
+     * Start up (better with sudo to prevent file access denied errors):
+     * Command for MacOS install Kafka with Zookeeper with brew:
+     * sudo zookeeper-server-start /usr/local/etc/kafka/zookeeper.properties
+     * sudo kafka-server-start /usr/local/etc/kafka/server.properties
+     */
 
     private final ObjectMapper objectMapper;
 
     private final KafkaService kafkaService;
 
     private final String kafkaTopic = "testing-advanced-topic";
+
+    private final String testingUserId = "testing-user-ID-Kafka";
 
     private final KafkaTemplate kafkaTemplate;
 
@@ -51,20 +59,25 @@ public class KafkaAdvancedController {
         } catch (JsonProcessingException e) {
             logger.error("Unable to convert KafkaAdvancedModel object from Object to JSON String.");
         }
-        if (StringUtils.hasText(kafkaAdvancedModelString)) {
-            // TODO: Move implementation of this method into kafkaService.addMessage()
-            // kafkaService.addMessage(kafkaTopic, kafkaAdvancedModelString);
 
-            kafkaTemplate.send(kafkaTopic, kafkaAdvancedModelString);
-            logger.info("Message has been sent to {}.", kafkaTopic);
+        if (StringUtils.hasText(kafkaAdvancedModelString)) {
+            // kafkaTemplate.send(kafkaTopic, kafkaAdvancedModelString);
+
+            kafkaService.addMessage(kafkaTopic, kafkaAdvancedModelString);
+            // kafkaService.addMessage(testingUserId, kafkaTopic, kafkaAdvancedModelString);
         }
         return "Message has been sent to " + kafkaTopic + ".";
     }
 
     @GetMapping("")
     public List<String> getKafkaTopicMessages() {
+         return kafkaService.getMessages(testingUserId, kafkaTopic);
+
+//        return oldGetKafkaMessages();
+    }
+
+    private List<String> oldGetKafkaMessages() {
         List<String> messages = new ArrayList<>();
-        logger.info("getKafkaTopicMessages()");
         // Create Kafka Consumer Factory.
         Map<String, Object> consumerConfigurations = kafkaService.generateConsumerConfigurations(null);
         ConsumerFactory<String, String> consumerFactory = kafkaService.generateConsumerFactory(consumerConfigurations);
@@ -77,18 +90,15 @@ public class KafkaAdvancedController {
         List<String> kafkaTopics = new ArrayList<>();
         kafkaTopics.add(kafkaTopic);
         consumer.subscribe(kafkaTopics);
-
         // Polling Consumer records to 2 days.
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime twoDaysLater = LocalDateTime.now().plusSeconds(1);
         ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.between(now, twoDaysLater));
-        logger.info("consumerRecords.count(): {}", consumerRecords.count());
 
         // Getting messages.
         Iterable<ConsumerRecord<String, String>> consumerRecordIterable = consumerRecords.records(kafkaTopic);
         consumerRecordIterable.forEach(consumerRecord -> {
             String message = consumerRecord.value();
-            logger.info("Extracted message: {}.", message);
             messages.add(message);
 
             consumer.commitSync(); // Acknowledge this message has been received.
@@ -96,8 +106,6 @@ public class KafkaAdvancedController {
 
         consumer.close();
 
-        // TODO: Move this implementation into kafkaService.getMessages().
-//        return kafkaService.getMessages(kafkaTopic);
         return messages;
     }
 }

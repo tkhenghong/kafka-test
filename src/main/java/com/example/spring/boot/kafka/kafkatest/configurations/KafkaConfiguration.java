@@ -1,99 +1,112 @@
 package com.example.spring.boot.kafka.kafkatest.configurations;
 
-import com.google.gson.Gson;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+import com.example.spring.boot.kafka.kafkatest.services.kafka.KafkaService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.*;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Setup default producer and consumer Kafka configuration for the application.
+ * <p>
+ * NOTE: It's not recommended to use the default producer/consumer KafkaTemplate / ConcurrentKafkaListenerContainerFactory objects sending/listening
+ * because it will be difficult to troubleshoot the problems in Kafka log in the future.
+ */
 @Configuration
 // Add @EnableKafka to let this application to listen for Kafka topic
 @EnableKafka
 public class KafkaConfiguration {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    // As you know Spring Boot dependency injection, this is the starting part that you configure here.
-    // When you run the application, @Bean will be read by Spring and run this method, get the object out from this method,
-    // and put it into the Spring context.
+    private final KafkaService kafkaService;
 
-    // ProducerFactory<String, SimpleModel>: String is the id's variable type, SimpleModel
-    // All SimpleModel are replaced by String
-    @Bean
-    ProducerFactory<String, String> producerFactory() {
-        Map<String, Object> config = new HashMap<>();
+    private final String defaultProducerClientId;
 
-        // The IP address of the Kafka server that you have set up.
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
+    private final String defaultConsumerClientId;
 
-        // Needed for serializing the key and value of the JSON objects that are passing through Kafka
-        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+    private final String defaultConsumerGroupId;
 
-        return new DefaultKafkaProducerFactory<>(config);
+    private final String producerBootstrapServers;
+
+    private final String consumerBootstrapServers;
+
+    @Autowired
+    public KafkaConfiguration(KafkaService kafkaService,
+                              @Value("${kafka.producer.client-id}") String defaultProducerClientId,
+                              @Value("${kafka.consumer.client-id}") String defaultConsumerClientId,
+                              @Value("${kafka.consumer.group-id}") String defaultConsumerGroupId,
+                              @Value("${kafka.producer.bootstrap-servers}") String producerBootstrapServers,
+                              @Value("${kafka.consumer.bootstrap-servers}") String consumerBootstrapServers) {
+        this.kafkaService = kafkaService;
+        this.defaultProducerClientId = defaultProducerClientId;
+        this.defaultConsumerClientId = defaultConsumerClientId;
+        this.defaultConsumerGroupId = defaultConsumerGroupId;
+        this.producerBootstrapServers = producerBootstrapServers;
+        this.consumerBootstrapServers = consumerBootstrapServers;
     }
 
-    // We need another bean for KafkaTemplate(Like WebSocketTemplate).
-    // Need to setup the topic (in this project is static but it can be made into dynamic) and send it to Kafka
-    // This application becomes the PRODUCER (Observable)
-    // The application will become a CONSUMER (Subscriber) when a WebSocket user connected to WebSocket and listens to the topic.
+    /**
+     * Default Producer factory for Kafka.
+     *
+     * @return ProducerFactory<String, String> object.
+     */
+    @Bean
+    ProducerFactory<String, String> producerFactory() {
+        Map<String, Object> producerConfigurations = kafkaService.generateProducerConfigurations(null);
+
+        return kafkaService.generateProducerFactory(producerConfigurations);
+    }
+
+    /**
+     * Default KafkaTemplate object for Kafka.
+     *
+     * @return KafkaTemplate<String, String> object.
+     */
     @Bean
     public KafkaTemplate<String, String> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory()); // The KafkaTemplate object loads with the Producer object in it.
     }
 
-    // Remember when you run this application, please run the Zookeeper with Kafka too****
-
-
-    // Kafka Consumer
+    /**
+     * Default consumer factory for Kafka Consumer.
+     *
+     * @return ConsumerFactory<String, String> object.
+     */
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
-        Map<String, Object> config = new HashMap<>();
+        Map<String, Object> consumerConfigurations = kafkaService.generateConsumerConfigurations(null);
 
-        // Basically just copy over the config.put(...) line from producerFactory() method, change from ProducerConfig to ConsumerConfig, change from SERIALIZER to DESERIALIZER
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        // config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        // Replace to use StringDeserializer.class
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-
-        // You can put any name for this listener/subscriber, just to differentiate this listener from other listeners in case if you have a lot of Kafka listeners.
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, "myGroupId");
-
-        // For the Consumer, not only you have to give the configurations that we have set up, but also give the instance of the object for Deserialization. the JsonDeserializer object you need to give the object explicitly.
-        // return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new JsonDeserializer<>(SimpleModel.class));
-        // Replace to use StringDeserializer.class
-        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new StringDeserializer());
+        return kafkaService.generateConsumerFactory(consumerConfigurations);
     }
 
-    // For Consumer, you also need to have a listener by default
-    // You must name this method as kafkaListenerContainerFactory, as this will replace the real kafkaListenerContainerFactory in the Spring Boot context
+    /**
+     * Default Kafka listeners' configuration in the project.
+     *
+     * @return ConcurrentKafkaListenerContainerFactory<String, String> object.
+     */
     @Bean
     public ConcurrentKafkaListenerContainerFactory kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, String> concurrentKafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
 
-        // ConcurrentKafkaListenerContainerFactory doesn't take ConsumerFactory as constructor argument, use setter
         concurrentKafkaListenerContainerFactory.setConsumerFactory(consumerFactory());
 
         return concurrentKafkaListenerContainerFactory;
     }
 
-    // When you run the application, you will see a lot of related consumer client logs appear, indicating successfully registered.
-    // myGroupId: partitions assigned: [myTopic-0]
-
-
-    // Additional knowledge: Use Google GSON 3rd party JSON Serializer and Deserializer library to
-    // This is used to create custom serialization or deserialization
-    @Bean
-    public Gson jsonConverter() {
-        return new Gson();
+    private void readValueValues(String methodName) {
+        logger.info("{} defaultProducerClientId: {}", methodName, defaultProducerClientId);
+        logger.info("{} defaultConsumerClientId: {}", methodName, defaultConsumerClientId);
+        logger.info("{} defaultConsumerGroupId: {}", methodName, defaultConsumerGroupId);
+        logger.info("{} producerBootstrapServers: {}", methodName, producerBootstrapServers);
+        logger.info("{} consumerBootstrapServers: {}", methodName, consumerBootstrapServers);
     }
-
-    // The instructor intents to converts whatever String comes from the HTML request into Gson object and convert it to any POJO object.
 }

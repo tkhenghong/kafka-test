@@ -105,7 +105,7 @@ public class KafkaSimpleController {
      *
      * @param simpleModelString: A String got from Kafka, ready to be converted into SimpleModel object.
      */
-    @KafkaListener(topics = "myTopic")
+//    @KafkaListener(topics = "myTopic")
     public void getSimpleModelFromKafkaWithGson(String simpleModelString) {
         logger.info("getSimpleModelFromKafkaWithGson()");
         logger.info("simpleModelString: {}", simpleModelString);
@@ -123,7 +123,7 @@ public class KafkaSimpleController {
      *
      * @param simpleModelString: A String got from Kafka, ready to be converted into SimpleModel object.
      */
-    @KafkaListener(topics = "myTopic3")
+//    @KafkaListener(topics = "myTopic3")
     public void getSimpleModelFromKafkaWithObjectMapper(String simpleModelString) {
         logger.info("getSimpleModelFromKafkaWithObjectMapper()");
         SimpleModel simpleModel = null;
@@ -181,7 +181,7 @@ public class KafkaSimpleController {
      *
      * @param moreSimpleModelString: A String got from Kafka, ready to be converted into MoreSimpleModel object.
      */
-    @KafkaListener(topics = "myTopic2")
+//    @KafkaListener(topics = "myTopic2")
     public void getMoreSimpleModelFromKafkaWithGson(String moreSimpleModelString) {
         logger.info("getMoreSimpleModelFromKafkaWithGson()");
         logger.info("moreSimpleModelString: {}", moreSimpleModelString);
@@ -196,7 +196,7 @@ public class KafkaSimpleController {
      *
      * @param moreSimpleModelString: A String got from Kafka, ready to be converted into MoreSimpleModel object.
      */
-    @KafkaListener(topics = "myTopic4")
+//    @KafkaListener(topics = "myTopic4")
     public void getMoreSimpleModelFromKafkaWithObjectMapper(String moreSimpleModelString) {
         logger.info("getMoreSimpleModelFromKafkaWithObjectMapper()");
         logger.info("moreSimpleModelString: {}", moreSimpleModelString);
