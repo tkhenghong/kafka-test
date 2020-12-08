@@ -72,7 +72,6 @@ public class KafkaAdvancedController {
     @GetMapping("")
     public List<String> getKafkaTopicMessages() {
          return kafkaService.getMessages(testingUserId, kafkaTopic);
-
 //        return oldGetKafkaMessages();
     }
 
